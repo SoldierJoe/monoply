@@ -10,9 +10,9 @@
     "vercel-build": "cd client && npm install && npm run build"
   },
   "dependencies": {
-    "@upstash/redis": "^1.37.0",
     "@vitejs/plugin-react": "^6.0.1",
     "express": "^4.21.0",
+    "ioredis": "^5.10.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "vite": "^8.0.10"

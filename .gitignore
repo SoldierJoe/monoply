@@ -1,9 +1,11 @@
 node_modules/
-.next/
-out/
+dist/
+.vercel/
 .env
 .env.local
 .env.*.local
-.vercel
-*.log
 .DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/

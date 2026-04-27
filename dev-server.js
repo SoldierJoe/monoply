@@ -29,6 +29,7 @@ async function start() {
     join:    (await import('./api/room/[code]/join.js')).default,
     leave:   (await import('./api/room/[code]/leave.js')).default,
     start:   (await import('./api/room/[code]/start.js')).default,
+    bot:     (await import('./api/room/[code]/bot.js')).default,
     action:  (await import('./api/room/[code]/action.js')).default,
     events:  (await import('./api/room/[code]/events.js')).default,
   };
@@ -55,6 +56,7 @@ async function start() {
   app.post('/api/room/:code/join', wrap(handlers.join));
   app.post('/api/room/:code/leave', wrap(handlers.leave));
   app.post('/api/room/:code/start', wrap(handlers.start));
+  app.post('/api/room/:code/bot', wrap(handlers.bot));
   app.post('/api/room/:code/action', wrap(handlers.action));
   app.get('/api/room/:code/events', wrap(handlers.events));
 

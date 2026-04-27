@@ -21,6 +21,18 @@ export default function Lobby({ room, selfId, onLeave }) {
     }
   }
 
+  async function addBot() {
+    setError(null);
+    setBusy(true);
+    try {
+      await api.addBot(room.code);
+    } catch (err) {
+      setError(err.message || 'Failed to add bot');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function copyCode() {
     if (navigator.clipboard) navigator.clipboard.writeText(room.code).catch(() => {});
   }
@@ -61,9 +73,16 @@ export default function Lobby({ room, selfId, onLeave }) {
 
         <div className="lobby__actions">
           {isHost ? (
-            <button className="btn-primary" disabled={!canStart || busy} onClick={startGame}>
-              {room.players.length < 2 ? 'Need 2+ players' : 'Start Game'}
-            </button>
+            <>
+              {room.players.length < 6 && (
+                <button className="btn-secondary" disabled={busy} onClick={addBot}>
+                  Add Bot Player
+                </button>
+              )}
+              <button className="btn-primary" disabled={!canStart || busy} onClick={startGame}>
+                {room.players.length < 2 ? 'Need 2+ players' : 'Start Game'}
+              </button>
+            </>
           ) : (
             <p className="lobby__waiting">Waiting for host to start the game…</p>
           )}

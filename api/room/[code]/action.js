@@ -9,6 +9,7 @@
 import { runOp } from '../../_lib/ops.js';
 import { rollDice, buyProperty, declinePurchase, endTurn, payJailFine }
   from '../../_lib/game/turn.js';
+import { scheduleBotTurn } from '../../_lib/game/bot.js';
 import { ok, fail, readJsonBody, getPlayerId, methodNotAllowed }
   from '../../_lib/http.js';
 
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
 
   try {
     const result = await runOp(code, (ctx, room) => fn(ctx, room, playerId));
+    scheduleBotTurn(code);
     ok(res, result);
   } catch (err) {
     fail(res, 400, err.message || String(err));

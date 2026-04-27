@@ -1,6 +1,5 @@
 import { runOp } from '../../_lib/ops.js';
-import { startGame } from '../../_lib/game/rooms.js';
-import { scheduleBotTurn } from '../../_lib/game/bot.js';
+import { addBot } from '../../_lib/game/rooms.js';
 import { ok, fail, getPlayerId, methodNotAllowed } from '../../_lib/http.js';
 
 export default async function handler(req, res) {
@@ -12,12 +11,11 @@ export default async function handler(req, res) {
   const code = String(req.query.code || '').toUpperCase();
 
   try {
-    await runOp(code, (ctx, room) => {
-      if (room.hostId !== playerId) throw new Error('Only the host can start');
-      startGame(ctx, room);
+    const player = await runOp(code, (ctx, room) => {
+      if (room.hostId !== playerId) throw new Error('Only the host can add bots');
+      return addBot(ctx, room);
     });
-    scheduleBotTurn(code);
-    ok(res);
+    ok(res, { player });
   } catch (err) {
     fail(res, 400, err.message || String(err));
   }

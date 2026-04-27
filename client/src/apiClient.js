@@ -54,6 +54,9 @@ export const api = {
   startGame: (code) =>
     request(`/api/room/${encodeURIComponent(code)}/start`, { method: 'POST' }),
 
+  addBot: (code) =>
+    request(`/api/room/${encodeURIComponent(code)}/bot`, { method: 'POST' }),
+
   getRoom: (code) =>
     request(`/api/room/${encodeURIComponent(code)}`),
 

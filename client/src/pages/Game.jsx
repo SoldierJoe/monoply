@@ -8,6 +8,7 @@ export default function Game({ room, selfId, onLeave }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
+  const [selectedTileIdx, setSelectedTileIdx] = useState(null);
   const prevRoom = useRef(room);
 
   const me = room.players.find(p => p.id === selfId);
@@ -80,6 +81,7 @@ export default function Game({ room, selfId, onLeave }) {
     'turn:decline': () => api.decline(room.code),
     'turn:end':     () => api.endTurn(room.code),
     'jail:pay':     () => api.payJail(room.code),
+    'build':        () => api.build(room.code, selectedTileIdx),
   };
 
   async function emit(event) {
@@ -104,6 +106,20 @@ export default function Game({ room, selfId, onLeave }) {
   const showDecline = isMyTurn && pendingPurchase;
   const showJailPay = isMyTurn && me?.inJail && !room.turn.hasRolled && me.cash >= 50 && room.phase === 'playing';
 
+  // Build House logic check
+  let showBuild = false;
+  let selectedTile = null;
+  if (selectedTileIdx !== null) {
+    selectedTile = room.board[selectedTileIdx];
+    if (selectedTile && selectedTile.type === 'property' && isMyTurn && room.phase === 'playing') {
+      const groupTiles = room.board.filter(t => t.type === 'property' && t.group === selectedTile.group);
+      const ownsGroup = groupTiles.every(t => t.ownerId === me?.id);
+      if (ownsGroup && me.cash >= selectedTile.houseCost && selectedTile.houses < 5) {
+        showBuild = true;
+      }
+    }
+  }
+
   return (
     <main className="game">
       <div className="game__layout">
@@ -112,7 +128,7 @@ export default function Game({ room, selfId, onLeave }) {
         </aside>
 
         <div className="game__board-wrap">
-          <Board room={room} selfId={selfId} />
+          <Board room={room} selfId={selfId} selectedTileIdx={selectedTileIdx} onSelectTile={setSelectedTileIdx} />
         </div>
 
         <aside className="game__side game__side--right">
@@ -143,6 +159,11 @@ export default function Game({ room, selfId, onLeave }) {
             {showDecline && (
               <button className="btn-ghost" disabled={busy} onClick={() => emit('turn:decline')}>
                 Pass
+              </button>
+            )}
+            {showBuild && (
+              <button className="btn-primary" style={{ background: 'var(--success)', color: '#fff' }} disabled={busy} onClick={() => emit('build')}>
+                Build {selectedTile.houses === 4 ? 'Hotel' : 'House'} on {selectedTile.name} ({selectedTile.houseCost})
               </button>
             )}
             {showEnd && (

@@ -80,4 +80,9 @@ export const api = {
   decline:  (code) => api.action(code, 'decline'),
   endTurn:  (code) => api.action(code, 'end'),
   payJail:  (code) => api.action(code, 'jail-pay'),
+  build:    (code, tileIdx) =>
+    request(`/api/room/${encodeURIComponent(code)}/action`, {
+      method: 'POST',
+      body: { type: 'build', tileIdx },
+    }),
 };

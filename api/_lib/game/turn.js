@@ -231,3 +231,38 @@ export function payJailFine(ctx, room, playerId) {
   player.jailTurns = 0;
   pushLog(ctx, room, `${player.name} pays ${JAIL_FINE} to leave jail.`);
 }
+
+export function buildHouse(ctx, room, playerId, tileIdx) {
+  const player = room.players.find(p => p.id === playerId);
+  if (room.currentPlayerId !== playerId) throw new Error('Not your turn');
+  
+  const tile = room.board[tileIdx];
+  if (!tile || tile.type !== 'property') throw new Error('Invalid property');
+  if (tile.ownerId !== playerId) throw new Error('You do not own this property');
+  if (tile.houses >= 5) throw new Error('Maximum buildings reached');
+  if (player.cash < tile.houseCost) throw new Error('Insufficient funds');
+  
+  // Rule: Must own all properties of this color group
+  const groupTiles = room.board.filter(t => t.type === 'property' && t.group === tile.group);
+  if (!groupTiles.every(t => t.ownerId === playerId)) {
+    throw new Error('You must own the complete color group to build');
+  }
+
+  // Rule: No properties in group can be mortgaged
+  if (groupTiles.some(t => t.mortgaged)) {
+    throw new Error('Cannot build if any property in the group is mortgaged');
+  }
+
+  // Rule: Must build evenly
+  const minHousesInGroup = Math.min(...groupTiles.map(t => t.houses));
+  if (tile.houses > minHousesInGroup) {
+    throw new Error('You must build evenly across the color group');
+  }
+
+  player.cash -= tile.houseCost;
+  tile.houses += 1;
+  
+  const buildingName = tile.houses === 5 ? 'a hotel' : 'a house';
+  pushLog(ctx, room, `${player.name} built ${buildingName} on ${tile.name} for ${tile.houseCost}.`);
+  ctx.events.push({ type: 'property:built', playerId, tileIdx: tile.idx, houses: tile.houses });
+}

@@ -11,7 +11,7 @@
  */
 
 import { runOp } from '../ops.js';
-import { rollDice, buyProperty, declinePurchase, endTurn, payJailFine }
+import { rollDice, buyProperty, declinePurchase, endTurn, payJailFine, buildHouse }
   from './turn.js';
 
 const BOT_DELAY_MS = 1200;   // delay before a bot acts (feels natural)
@@ -80,6 +80,33 @@ async function playBotTurn(code) {
         declinePurchase(ctx, r, current.id);
       }
     });
+  }
+
+  // Step 4.5: Try to build houses if rich enough
+  if (room3.phase === 'playing' && room3.currentPlayerId === current.id) {
+    const properties = room3.board.filter(t => t.type === 'property' && t.ownerId === current.id);
+    // Find buildable properties
+    for (const p of properties) {
+      if (p.houses >= 5) continue;
+      const groupTiles = room3.board.filter(t => t.type === 'property' && t.group === p.group);
+      const ownsGroup = groupTiles.every(t => t.ownerId === current.id);
+      const noneMortgaged = !groupTiles.some(t => t.mortgaged);
+      
+      if (ownsGroup && noneMortgaged) {
+        // Can we afford it, and are we not overspending? Keep a safety buffer of 200.
+        const minGroupHouses = Math.min(...groupTiles.map(t => t.houses));
+        if (p.houses === minGroupHouses) {
+           const latestPlayer = room3.players.find(pl => pl.id === current.id);
+           if (latestPlayer.cash >= p.houseCost + 200) {
+             await runOp(code, (ctx, r) => {
+               buildHouse(ctx, r, current.id, p.idx);
+             });
+             // Just build one house per turn to keep it simple, then proceed to end turn
+             break;
+           }
+        }
+      }
+    }
   }
 
   // Step 5: end turn (or re-roll on doubles)

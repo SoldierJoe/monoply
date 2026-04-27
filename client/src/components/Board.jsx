@@ -1,7 +1,7 @@
 import Tile from './Tile.jsx';
 import { gridCellFor } from '../board-layout.js';
 
-export default function Board({ room, selfId }) {
+export default function Board({ room, selfId, selectedTileIdx, onSelectTile }) {
   const playersByTile = new Map();
   for (const p of room.players) {
     if (p.bankrupt) continue;
@@ -18,8 +18,9 @@ export default function Board({ room, selfId }) {
         return (
           <div
             key={tile.idx}
-            className="board__cell"
-            style={{ gridRow: cell.row, gridColumn: cell.col }}
+            className={`board__cell ${tile.idx === selectedTileIdx ? 'is-selected' : ''}`}
+            style={{ gridRow: cell.row, gridColumn: cell.col, cursor: 'pointer' }}
+            onClick={() => onSelectTile && onSelectTile(tile.idx)}
           >
             <Tile
               tile={tile}

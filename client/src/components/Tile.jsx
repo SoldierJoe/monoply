@@ -15,11 +15,7 @@ const TILE_TYPE_LABELS = {
 
 export default function Tile({ tile, side, players, owner, isCurrent }) {
   const isCorner = side === 'corner';
-  const orient =
-    side === 'bottom' ? 0 :
-    side === 'left'   ? 90 :
-    side === 'top'    ? 180 :
-    side === 'right'  ? 270 : 0;
+  const orient = 0;
 
   return (
     <div

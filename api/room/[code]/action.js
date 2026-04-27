@@ -7,7 +7,7 @@
  */
 
 import { runOp } from '../../_lib/ops.js';
-import { rollDice, buyProperty, declinePurchase, endTurn, payJailFine }
+import { rollDice, buyProperty, declinePurchase, endTurn, payJailFine, buildHouse }
   from '../../_lib/game/turn.js';
 import { scheduleBotTurn } from '../../_lib/game/bot.js';
 import { ok, fail, readJsonBody, getPlayerId, methodNotAllowed }
@@ -19,6 +19,7 @@ const ACTIONS = {
   decline:    (ctx, room, pid) => { declinePurchase(ctx, room, pid); return {}; },
   end:        (ctx, room, pid) => { endTurn(ctx, room, pid); return {}; },
   'jail-pay': (ctx, room, pid) => { payJailFine(ctx, room, pid); return {}; },
+  build:      (ctx, room, pid, body) => { buildHouse(ctx, room, pid, body.tileIdx); return {}; },
 };
 
 export default async function handler(req, res) {
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
   if (!fn) return fail(res, 400, `Unknown action type: ${body.type}`);
 
   try {
-    const result = await runOp(code, (ctx, room) => fn(ctx, room, playerId));
+    const result = await runOp(code, (ctx, room) => fn(ctx, room, playerId, body));
     scheduleBotTurn(code);
     ok(res, result);
   } catch (err) {

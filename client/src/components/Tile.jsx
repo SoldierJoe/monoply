@@ -4,9 +4,9 @@ import { TOKEN_COLORS, TOKEN_GLYPHS } from '../tokens.js';
 const TILE_TYPE_LABELS = {
   cc: 'Community Chest',
   chance: 'Chance',
-  go: 'Tahrir Sq.',
+  go: 'The Pyramids',
   jail: 'Jail',
-  free: 'Free Parking',
+  free: 'Khan el-Khalili',
   gotojail: 'Go to Jail',
   tax: 'Tax',
   railroad: 'Transit',

@@ -11,6 +11,7 @@ export const MAX_PLAYERS = 6;
 export const MIN_PLAYERS = 2;
 const STARTING_CASH = 1500;
 const TOKENS = ['felucca', 'fez', 'cat', 'pyramid', 'lantern', 'scarab'];
+const BOT_NAMES = ['Cleopatra', 'Ramses', 'Nefertiti', 'Tutankhamun', 'Horus'];
 
 export function makeCode() {
   let code = '';
@@ -32,6 +33,7 @@ function publicPlayer(p) {
     jailFreeCards: p.jailFreeCards,
     bankrupt: p.bankrupt,
     connected: p.connected,
+    isBot: p.isBot ?? false,
   };
 }
 
@@ -99,10 +101,41 @@ export function addPlayer(ctx, room, playerId, name) {
     jailFreeCards: 0,
     bankrupt: false,
     connected: true,
+    isBot: false,
   };
   room.players.push(player);
   pushLog(ctx, room, `${cleanName} joined.`);
   ctx.events.push({ type: 'player:joined', playerId, name: cleanName });
+  return player;
+}
+
+export function addBot(ctx, room) {
+  if (room.phase !== 'lobby') throw new Error('Game already started');
+  if (room.players.length >= MAX_PLAYERS) throw new Error('Room is full');
+
+  const usedNames = new Set(room.players.map(p => p.name));
+  const botName = BOT_NAMES.find(n => !usedNames.has(n)) ?? `Bot ${room.players.length + 1}`;
+  const botId = `bot_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+  const usedTokens = new Set(room.players.map(p => p.token));
+  const token = TOKENS.find(t => !usedTokens.has(t)) ?? TOKENS[0];
+
+  const player = {
+    id: botId,
+    name: botName,
+    token,
+    cash: STARTING_CASH,
+    position: 0,
+    inJail: false,
+    jailTurns: 0,
+    jailFreeCards: 0,
+    bankrupt: false,
+    connected: true,
+    isBot: true,
+  };
+  room.players.push(player);
+  pushLog(ctx, room, `${botName} (bot) joined.`);
+  ctx.events.push({ type: 'player:joined', playerId: botId, name: botName, isBot: true });
   return player;
 }
 

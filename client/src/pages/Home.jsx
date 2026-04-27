@@ -40,9 +40,9 @@ export default function Home({ connStatus, name, setName, onJoined }) {
         <DecoOrnament />
 
         <header className="home__header">
-          <p className="home__eyebrow">est. 1935 · played in cairo</p>
-          <h1 className="home__title">Cairo</h1>
-          <p className="home__subtitle">A Monopoly for the city of a thousand minarets</p>
+          <p className="home__eyebrow">est. 1935 · played across egypt</p>
+          <h1 className="home__title">Egypt</h1>
+          <p className="home__subtitle">A Monopoly for the land of the pharaohs</p>
         </header>
 
         <div className="home__divider" />
@@ -215,7 +215,7 @@ function Footer() {
         textAlign: 'center',
       }}
     >
-      Cairo Monopoly
+      Egypt Monopoly
     </footer>
   );
 }

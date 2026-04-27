@@ -10,7 +10,7 @@ export default function Board({ room, selfId }) {
   }
 
   return (
-    <div className="board" role="grid" aria-label="Cairo Monopoly board">
+    <div className="board" role="grid" aria-label="Egypt Monopoly board">
       {room.board.map((tile) => {
         const cell = gridCellFor(tile.idx);
         const owner = tile.ownerId ? room.players.find(p => p.id === tile.ownerId) : null;
@@ -43,9 +43,9 @@ export default function Board({ room, selfId }) {
 function BoardCenter({ room }) {
   return (
     <div className="board__center-inner">
-      <p className="board__eyebrow">Cairo</p>
+      <p className="board__eyebrow">Egypt</p>
       <h2 className="board__title">Monopoly</h2>
-      <p className="board__subtitle">A Monopoly for the city of a thousand minarets</p>
+      <p className="board__subtitle">A Monopoly for the land of the pharaohs</p>
       {room.turn?.lastRoll && (
         <div className="dice">
           <Die n={room.turn.lastRoll.d1} />

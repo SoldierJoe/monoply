@@ -76,7 +76,7 @@ function movePlayer(ctx, room, player, steps) {
   const to = (from + steps) % 40;
   if (to < from) {
     player.cash += 200;
-    pushLog(ctx, room, `${player.name} passes Tahrir Square — collect 200.`);
+    pushLog(ctx, room, `${player.name} passes The Pyramids — collect 200.`);
   }
   player.position = to;
   ctx.events.push({ type: 'player:moved', playerId: player.id, from, to });

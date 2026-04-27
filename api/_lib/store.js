@@ -12,7 +12,18 @@
 
 import { memoryAdapter } from './store-memory.js';
 
-const adapter = memoryAdapter;
+let adapter = memoryAdapter;
+
+// Try to use Redis if Vercel KV or Upstash env vars are present.
+// Note: In Vercel, dynamic imports inside standard Serverless Functions 
+// can be tricky. We use top-level logic here to determine the adapter.
+if (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) {
+  const { redisAdapter } = await import('./store-redis.js');
+  adapter = redisAdapter;
+  console.log('[store] Using Upstash Redis adapter');
+} else {
+  console.log('[store] Using in-memory adapter');
+}
 
 export const store = {
   async get(key) {

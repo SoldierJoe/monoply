@@ -6,6 +6,21 @@ import { BOARD_SQUARES, PLAYER_COLORS, PLAYER_TOKENS } from '../../lib/boardData
 
 const Board = dynamic(() => import('../../components/Board'), { ssr: false });
 
+const COLOR_HEX = {
+  brown: '#8B4513', lightblue: '#87CEEB', pink: '#FF69B4',
+  orange: '#FF8C00', red: '#DC143C', yellow: '#FFD700',
+  green: '#228B22', darkblue: '#00008B',
+};
+
+function DiePip({ value }) {
+  const glyph = ['⚀','⚁','⚂','⚃','⚄','⚅'][value - 1] || '⚀';
+  return (
+    <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-white border-2 border-gray-800 text-2xl shadow-sm">
+      {glyph}
+    </span>
+  );
+}
+
 export default function RoomPage() {
   const router = useRouter();
   const { id: roomId } = router.query;
@@ -14,20 +29,27 @@ export default function RoomPage() {
   const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roomLost, setRoomLost] = useState(false);
   const logEndRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setPlayerId(localStorage.getItem('playerId') || '');
+    if (typeof window !== 'undefined' && roomId) {
+      // Per-room playerId so joining a second room doesn't clobber the first
+      setPlayerId(localStorage.getItem(`playerId:${roomId}`) || localStorage.getItem('playerId') || '');
       setPlayerName(localStorage.getItem('playerName') || '');
     }
-  }, []);
+  }, [roomId]);
 
   const fetchState = useCallback(async () => {
     if (!roomId) return;
     try {
       const res = await fetch(`/api/room/${roomId}/state`);
-      if (res.ok) setGameState(await res.json());
+      if (res.ok) {
+        setGameState(await res.json());
+        setRoomLost(false);
+      } else if (res.status === 404) {
+        setRoomLost(true);
+      }
     } catch {}
   }, [roomId]);
 
@@ -43,15 +65,42 @@ export default function RoomPage() {
 
   async function doAction(action, extra = {}) {
     setLoading(true); setError('');
-    const res = await fetch(`/api/room/${roomId}/action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, playerId, ...extra }),
-    });
-    const data = await res.json();
-    if (data.error) setError(data.error);
-    await fetchState();
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/room/${roomId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, playerId, ...extra }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        if (data.code === 'ROOM_NOT_FOUND') setRoomLost(true);
+      }
+      await fetchState();
+    } catch (e) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (roomLost) {
+    return (
+      <div className="min-h-screen bg-green-900 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md p-8 text-center">
+          <div className="text-5xl mb-3">😕</div>
+          <h1 className="text-xl font-bold text-gray-800 mb-2">Room state was lost</h1>
+          <p className="text-sm text-gray-600 mb-4">
+            Room <strong>{roomId}</strong> is no longer available. Game state on Vercel can be reset
+            after periods of inactivity (the server uses in-memory storage).
+          </p>
+          <button onClick={() => router.push('/')}
+            className="bg-green-700 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-lg">
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!gameState) return (
@@ -109,7 +158,7 @@ export default function RoomPage() {
                 {gameState.status === 'lobby' ? (
                   <div>
                     <h2 className="font-bold text-gray-800 mb-2">⏳ Waiting for players</h2>
-                    <p className="text-sm text-gray-500">Share the room link or code <strong>{roomId}</strong></p>
+                    <p className="text-sm text-gray-500">Share the room code <strong>{roomId}</strong> with friends.</p>
                   </div>
                 ) : gameState.status === 'ended' ? (
                   <div>
@@ -129,12 +178,15 @@ export default function RoomPage() {
                       <span className="font-semibold text-sm text-gray-800">
                         {isMyTurn ? "Your turn!" : `${currentPlayer?.name}'s turn`}
                       </span>
-                      {gameState.dice && (
-                        <span className="ml-auto text-lg">
-                          {['⚀','⚁','⚂','⚃','⚄','⚅'][gameState.dice[0]-1]}
-                          {['⚀','⚁','⚂','⚃','⚄','⚅'][gameState.dice[1]-1]}
-                        </span>
-                      )}
+                    </div>
+
+                    {/* Dice panel */}
+                    <div className="flex items-center justify-center gap-2 bg-gray-50 rounded-lg py-3 mb-3">
+                      <DiePip value={gameState.dice?.[0] || 1} />
+                      <DiePip value={gameState.dice?.[1] || 1} />
+                      <span className="ml-2 text-xs text-gray-500">
+                        {gameState.hasRolled ? `= ${(gameState.dice?.[0] || 0) + (gameState.dice?.[1] || 0)}` : 'not rolled'}
+                      </span>
                     </div>
 
                     {error && <p className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded mb-2">{error}</p>}
@@ -194,7 +246,7 @@ export default function RoomPage() {
               <div className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-bold text-gray-800 text-sm mb-3">Players</h2>
                 <div className="space-y-2">
-                  {gameState.players.map((p, i) => (
+                  {gameState.players.map((p) => (
                     <div key={p.id}
                       className={`flex items-center gap-2 p-2 rounded-lg ${p.id === playerId ? 'bg-green-50 border border-green-200' : 'bg-gray-50'} ${p.bankrupt ? 'opacity-40' : ''}`}>
                       <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
@@ -227,7 +279,7 @@ export default function RoomPage() {
                         return (
                           <div key={sid} className="flex items-center gap-2 text-xs">
                             {sq.color && <div className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: { brown:'#8B4513',lightblue:'#87CEEB',pink:'#FF69B4',orange:'#FF8C00',red:'#DC143C',yellow:'#FFD700',green:'#228B22',darkblue:'#00008B' }[sq.color] }} />}
+                              style={{ backgroundColor: COLOR_HEX[sq.color] }} />}
                             <span className="text-gray-700 truncate">{sq.name}</span>
                             {gameState.status === 'playing' && isMyTurn && sq.houseCost && !gameState.pendingAction && (
                               <button onClick={() => doAction('build_house', { squareId: +sid })}

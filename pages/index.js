@@ -20,6 +20,7 @@ export default function Home() {
     const data = await res.json();
     if (data.error) { setError(data.error); setLoading(false); return; }
     localStorage.setItem('playerId', data.playerId);
+    localStorage.setItem(`playerId:${data.roomId}`, data.playerId);
     localStorage.setItem('playerName', name.trim());
     router.push(`/room/${data.roomId}`);
   }
@@ -34,9 +35,11 @@ export default function Home() {
     });
     const data = await res.json();
     if (data.error) { setError(data.error); setLoading(false); return; }
+    const code = roomCode.trim().toUpperCase();
     localStorage.setItem('playerId', data.playerId);
+    localStorage.setItem(`playerId:${code}`, data.playerId);
     localStorage.setItem('playerName', name.trim());
-    router.push(`/room/${roomCode.trim().toUpperCase()}`);
+    router.push(`/room/${code}`);
   }
 
   return (
